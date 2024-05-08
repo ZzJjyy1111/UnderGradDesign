@@ -1,0 +1,146 @@
+% !TEX root = ../main.tex
+
+\chapter{预备知识}
+多刚体系统是一种特殊的多智能体系统，因此在本文接下来的分析计算中，不仅需要用到多智能体系统研究中常用的图论知识、矩阵知识，还需要用到刚体姿态动力学的相关知识。
+\section{图论知识}
+多刚体系统之间的信息交互网络可以用拓扑图$\mathcal{G}=\{\mathcal{V},\mathcal{E}\}$描述\cite{ren2008distributed}。
+$\mathcal{V}=\{1,2,...,n\}$是图的点集，代表系统中的各个刚体，其中$n$为刚体个数。
+$\mathcal{E}\subset\mathcal{V}\times\mathcal{V}$是图的边集，其中每个元素（边）是点集中元素的有序对。
+边$(i,j)\in\mathcal{E}$代表刚体$j$能获得刚体$i$的信息，此时$i$称为$j$的邻居，或者称$i$为父（首）节点，$j$为子（尾）节点。
+点$i$的相邻节点集合为$\mathcal{N}_i=\{j\in\mathcal{V}|(j,i)\in\mathcal{E}\}$，代表所有能让刚体$i$接收到信息的其他刚体。
+当$\mathcal{G}$为无向图时，若边$(i,j)\in\mathcal{E}$，则边$(j,i)\in\mathcal{E}$，也就是说刚体之间的通信是相互的，且两者互为邻居。
+首尾相连但不形成环的边的集合称为路径，例如$\{(i_1,i_2),(i_2,i_3),...,(i_{m-1},i_m)\}$。
+若无向图$\mathcal{G}$中两个点之间都有至少一条路径将它们相连，则称$\mathcal{G}$为连通图。
+若无向图$\mathcal{G}$中的任意两个点之间有且仅有一条路径将它们相连，则把$\mathcal{G}$称为树。
+
+除了用集合描述图，还能用矩阵刻画图的性质。图$\mathcal{G}$可以用邻接矩阵$\mathcal{A}$来描述，$\mathcal{A}=[a_{ij}]_{n\times n}$。
+若边$(j,i)$存在边集中，即刚体$i$能收到刚体$j$的信息，则$a_{ij}>0$；若边$(j,i)$不存在边集中，即刚体$i$不能收到刚体$j$的信息，则$a_{ij}=0$。
+$a_{ij}$的大小代表边的权重，对于平衡图，所有非零的$a_{ij}$设置为$1$，或其他相同的值。
+对于节点$i$，所有从$i$出发的边的权重之和称为$i$的出度$d^i_{out}$，$d^i_{out}=\sum_{j=1}^na_{ji}$；
+所有到达$i$的边的权重之和称为$i$的入度$d_{in}^i$，$d_{in}^i=\sum_{j=1}^na_{ij}$。
+当$\mathcal{G}$为无向图时，邻接矩阵$\mathcal{A}$为对称矩阵，每个节点的入度等于出度。
+图$\mathcal{G}$的入读矩阵定义为$\mathcal{D}=\text{diag}(d_{in}^1,d_{in}^2,...,d_{in}^n)$。
+图$\mathcal{G}$的拉普拉斯矩阵定义为$\mathcal{L}=[l_{ij}]_{n\times n}=\mathcal{D}-\mathcal{A}$。或者写成
+\begin{equation}
+    l_{ii}=\sum_{j=1,j\not=i}^n a_{ij},\quad l_{ij}=-a_{ij},i\not=j
+\end{equation}
+关于$\mathcal{L}$和$x=[x_1^T,x_2^T,...,x_n^T]^T$（每个$x_i$都是$m$维度的向量）通常有以下等式：
+\begin{equation}
+    \sum{j=1}^na_{ij}(x_i-x_j)=(\mathcal{L}_i\otimes I_m)x
+\end{equation}
+\begin{equation}
+    \sum_{i=1}^n\sum_{j=1}^na_{ij}x_i^T(x_i-x_j)=x^T(\mathcal{L}\otimes I_m)x
+\end{equation}
+其中$\mathcal{L}_i$表示矩阵$\mathcal{L}$的第$i$行。
+定义图$\mathcal{G}$的关联矩阵为$Q=[q_{ik}]\in\mathbb{R}^{n\times p}$，
+其中$p$为边集$\mathcal{E}$中元素的个数。
+若某条边$e_k$从节点$i$出发到节点$j$终止，则$q_{ik}=1$，$q_{jk}=-1$，第$k$列的其余各元素为0。
+关于关联矩阵$Q$，有引理如下
+\begin{lemma}
+    \label{lm:incidence}
+    若无向图$\mathcal{G}$是一棵树，则关联矩阵$Q$满秩。
+\end{lemma}
+\section{矩阵知识}
+\begin{definition}\cite{ren2008distributed}
+    对于给定矩阵$A=[a_{ij}]\in\mathbb{R}^{p\times q}$，$B=[b_{ij}]\in\mathbb{R}^{m\times n}$，它们的Kronecker积为
+    \begin{equation}
+        A\otimes B=\left[\begin{matrix} a_{11}B&\cdots&a_{1q}B\\\vdots&\ddots&\vdots\\a_{p1}B&\cdots&a_{pq}B\end{matrix}\right]\in\mathbb{R}^{pm\times qn}
+    \end{equation}
+\end{definition}
+\begin{lemma}
+    对于相同维度的方阵$A$，$B$，$C$，关于矩阵的迹(trace)，有如下事实
+    \begin{equation}
+        \text{tr}(AB)=\text{tr}(BA)
+    \end{equation}
+    \begin{equation}
+        \text{tr}(ABC)=\text{tr}(BCA)=\text{tr}(CAB)
+    \end{equation}
+\end{lemma}
+\begin{lemma}[杨氏不等式]
+    \label{lm:young}
+    对$\forall x,y\in\mathbb{R}$，有$\epsilon>0$，$xy<\frac{\epsilon}{2}x^2+\frac{1}{2\epsilon}y^2$。
+    
+    拓展到向量，对$\forall x,y\in\mathbb{R}^m$，有$\epsilon>0$，$x^Ty<\frac{\epsilon}{2}\parallel x\parallel^2+\frac{1}{2\epsilon}\parallel y\parallel^2$。
+    其中$\parallel \cdot \parallel$表示向量的2范数 
+\end{lemma}
+\begin{lemma}\cite{ren2008distributed}
+    \label{eigenL}
+    对于有向图$\mathcal{G}$，对应拉普拉斯矩阵$\mathcal{L}$，图$\mathcal{G}$含有有向生成树，当且仅当0是$\mathcal{L}$的单特征值，且$\mathcal{L}$的其他特征值实部均大于0。
+    对于无向图$\mathcal{G}$，对应拉普拉斯矩阵$\mathcal{L}$，图$\mathcal{G}$是联通的，当且仅当0是$\mathcal{L}$的单特征值。
+\end{lemma}
+\section{刚体知识}
+刚体的姿态由刚体系$\mathcal{F_B}$相对惯性系$\mathcal{F_I}$的旋转描述，
+通常用旋转矩阵$R\in \text{SO(3)}$表示。$\text{SO(3)}$是特殊正交群，$\text{SO(3)}=\{R\in \mathbb{R}^{3\times 3}|\det R =1,RR^T=R^TR=I_3\}$。
+同时，旋转也可以用欧拉角$\theta\in(-\pi,\pi]$与欧拉轴$u\in \mathbb{S}^2$表示，这两个量代表刚体系相对惯性系绕$u$逆时针旋转了$\theta$。
+旋转矩阵与这两者的关系由罗德里格斯旋转公式\cite{sola2018micro}给出：
+\begin{equation}
+    R=I+u^\wedge\sin\theta+(u^\wedge)^2(1-\cos\theta)
+\end{equation}
+也可以表示为指数形式
+\begin{equation}
+    R=\exp((\theta u)^\wedge)
+\end{equation}
+以上两式中，$(\cdot)^\wedge$将一个三维向量转换成一个三维方阵，对于向量$x=[x_1,x_2,x_3]^T\in\mathbb{R}^3$
+\begin{equation}
+    x^\wedge=\left[\begin{matrix} 0&-x_3&x_2\\x_3&0&-x_1\\-x_2&x_1&0\end{matrix}\right]
+\end{equation}
+与之互为逆运算的$(\cdot)^\vee$将一个对角线上元素全为0的三维方阵转换为一个三维向量
+\begin{equation}
+    \left(\left[\begin{matrix} 0&-x_3&x_2\\x_3&0&-x_1\\-x_2&x_1&0\end{matrix}\right]\right)^\vee=x=[x_1,x_2,x_3]^T
+\end{equation}
+值得注意的是，上述三维方阵为反对称矩阵，因此有
+\begin{equation}
+    \label{eq:fanduichen}
+    (x^\wedge)^T=-x^\wedge
+\end{equation}
+
+关于旋转矩阵及$(\cdot)^\wedge$$(\cdot)^\vee$运算，先给出如下引理
+\begin{lemma}\cite{zou2017rotation}
+    \label{lm:trace}
+    对于向量$x\in\mathbb{R}^3$ 和矩阵$R\in\text{SO(3)}$，$R$对应的欧拉角$\theta$，如下事实成立
+    \begin{equation}
+        \text{tr}((x^\wedge R))=-x^T(R-R^T)^\vee
+    \end{equation}
+    \begin{equation}
+        (x^\wedge R+R^Tx^\wedge)^\vee=(\text{tr}(R)I_3-R)x
+    \end{equation}
+    \begin{equation}
+        (Rx)^\wedge=Rx^\wedge R^T
+    \end{equation}
+    \begin{equation}
+        \parallel\frac{(R-R^T)^\vee}{2}\parallel=\cos\frac{\theta}{2}\sqrt{\text{tr}(I_3-R)}
+    \end{equation}
+    \begin{equation}
+        \text{tr}(I_3-R)=2(1-\cos\theta)\in[0,4)
+    \end{equation}
+    $(R-R^T)^\vee=0$，当且仅当$R=I_3$时成立。
+\end{lemma}
+
+对于单个刚体，其姿态动力学满足
+\begin{equation}
+    \label{eq:dynamic1}
+    \dot R=R\omega^\wedge
+\end{equation}
+\begin{equation}
+    \label{eq:dynamic2}
+    J\dot \omega=-\omega^\wedge J\omega+\tau
+\end{equation}
+其中$R\in\text{SO(3)}$是刚体系相对于惯性系的旋转矩阵，$\omega\in\mathbb{R}^3$为刚体角速度，$J\in\mathbb{R}^{3\times 3}$为刚体转动惯量矩阵，$\tau\in\mathbb{R}^3$为加在刚体上的力矩，也就是控制算法需要给出的控制律。
+$\omega$、$J$、$\tau$都是在刚体系中给出的，而非惯性系下的。
+\section{其他引理}
+\begin{lemma}\cite{lin2012new}
+    令分段连续函数$\phi(t):\mathbb{R}_{\geq0}\rightarrow\mathbb{R}$满足以下条件
+
+    条件1：$\phi(t)$在任意分段区间$(t_{r_j},t_{r_{j+1}})$内是连续与可导的，并在$t_{r_j}$处发生切换，且$\phi(t)$是在$t_{r_j}$处右连续，右可导，$r\in\mathbb{Z}_{\geq0}$，$j=0,1,...,m_r-1$。
+
+    条件2：$\phi(t)$的导数（右导数）在$t\in[0,+\infty)$是有界的，即对于某个常数$\omega>0$，$|\dot\phi(t)|\leq\omega$在$t\in[0,+\infty)$恒成立。
+
+    条件3：$\lim_{t\rightarrow+\infty}\int_{0}^t\phi(\tau)d\tau$存在且有限。
+
+    可以得到
+    \begin{equation}
+        \lim_{t\rightarrow\infty}\phi(t)=0
+    \end{equation}
+\end{lemma}
+\section{本章小结}
+本章介绍了研究多刚体系统所需的相关数学及物理知识，包括图论知识、矩阵知识、刚体知识，引入了一些在后续证明中需要用到的引理定理。

@@ -1,0 +1,131 @@
+% !TEX root = ../main.tex
+
+\chapter{连续时间系统下多刚体系统姿态一致性}
+\section{引言}
+\section{问题描述}
+考虑$n$个刚体组成的多刚体系统，每个刚体的姿态动力学服从\ref{eq:dynamic1}\ref{eq:dynamic2}，即
+\begin{equation}
+    \label{eq:dynamic3}
+    \dot R_i=R_i\omega_i^\wedge
+\end{equation}
+\begin{equation}
+    J_i\dot\omega_i=-\omega_i^\wedge J_i\omega_i+\tau_I
+\end{equation}
+其中$R_i\in\text{SO(3)}$是刚体系相对于惯性系的旋转矩阵，$\omega_i\in\mathbb{R}^3$为刚体角速度，
+$J_i\in\mathbb{R}^{3\times 3}$为刚体转动惯量矩阵，$\tau_i\in\mathbb{R}^3$为加在刚体上的力矩，也就是控制算法需要给出的控制律。
+$\omega_i$、$J_i$、$\tau_i$都是在刚体系中给出的，而非惯性系下的。
+
+在此多刚体系统中，我们假设每个刚体$i$能通过测量获得它与部分其他刚体$j$（$a_{ij}>0$）之间的相对信息，
+并且还能通过自身配备的传感器获得自身绝对角速度信息$\omega_i$。
+在本章第三节有相对角速度测量的情况下，相对信息指的是相对姿态$R_j^TR_i$和相对角速度$\omega_i-R_i^TR_j\omega_j$。
+在本章第四届无相对角速度测量的情况下，相对信息指的是仅相对姿态$R_j^TR_i$。
+
+基于以上信息，我们希望为此多刚体系统设计一个协议，使得各刚体姿态达到一致，即$R_i=R_j$，$\forall i,j\in\mathcal{V},i\not=j$。
+
+\section{有相对角速度测量}
+此部分相对简单，已有一些研究人员从其他角度出发进行了研究\cite{maadani20226}\cite{sarlette2009autonomous}，
+但为了本文内容的完整性，我们仍在此处给出控制协议并作分析证明。
+为解决上述多刚体系统姿态一致性问题，我们给出以下控制协议：
+\begin{equation}
+    \label{eq:protocol1}
+    \tau_i=-k_1\sum_{j=1}^na_{ij}(R_j^TR_i-R_i^TR_j)^{\vee}-k_2\sum_{j=1}^na_{ij}(\omega_i-R_i^TR_j\omega_j)-k_3\omega_i
+\end{equation}
+其中$k_1$，$k_2$，$k_3$是三个大于0的常数。
+
+\subsection{一致性分析}
+利用Lyapunov稳定性理论，分析多刚体系统\ref{eq:dynamic3}在控制协议\ref{eq:protocol1}下的一致性，得到以下结果。
+\begin{theorem}
+    考虑多刚体系统\ref{eq:dynamic3}和控制协议\ref{eq:protocol1}。若通讯拓扑图$\mathcal{G}$是一个无向连通图，则
+    $\lim_{t\rightarrow\infty}\omega_i=0$，$\lim_{t\rightarrow\infty}\sum_{j=1}^na_{ij}(R_j^TR_i-R_i^TR_j)^\vee=0,\forall i$。
+    若$\mathcal{G}$是一棵无向树，则多刚体系统姿态能达到一致，即$R_i=R_j$。
+    \begin{proof}
+        
+        首先计算$\text{tr}(R_j^TR_i)$对时间的导数：
+        \begin{equation}
+            \begin{aligned}
+                \dot{(R_j^TR_i)}&=(R_j\omega_j^\wedge)^TR_i+R_j^TR_i\omega_i^\wedge\\
+                &=R_j^TR_i(-R_i^TR_j\omega_j^\wedge R_j^TR_i+\omega_i^\wedge)\\
+                &=R_j^TR_i(\omega_i-R_i^TR_j\omega_j)^\wedge\\
+                \dot{\text{tr}(R_j^TR_i)}&=\text{tr}(\dot{R_j^TR_i})\\
+                &=-(\omega_i-R_i^TR_j\omega_j)^T(R_j^TR_i-R_i^TR_j)^\vee
+            \end{aligned}
+        \end{equation}
+        以上用到了\ref{lm:trace}和\ref{eq:fanduichen}。
+
+        设李雅普诺夫函数为
+        \begin{equation}
+            V=\frac{k_1}{2}\sum_{i=1}^n \sum_{j=1}^n a_{ij}\text{tr}(I_3-R_j^TR_i)+\frac{1}{2}\sum_{i=1}^n\omega_i^TJ_i\omega_i
+        \end{equation}
+        将$V$对时间求导得到
+        \begin{equation}
+            \dot V=\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ij}(\omega_i-R_i^TR_j\omega_j)^T(R_j^TR_i-R_i^TR_j)^\vee+\sum_{i=1}^n\omega_i^TJ_i\dot\omega_i
+        \end{equation}
+        其中第一项可以写成
+        \begin{equation}
+            \dot V_1=\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ij}\omega_i^T(R_j^TR_i-R_i^TR_j)^\vee-\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ij}(R_i^TR_j\omega_j)^T(R_j^TR_i-R_i^TR_j)^\vee
+        \end{equation}
+
+        由\ref{lm:trace}，对于旋转矩阵$A\in\text{SO(3)}$和三维列向量$x$，有
+        \begin{equation}
+            (Ax)^T(A^T-A)^\vee=\text{tr}((Ax)^\wedge A)=\text{tr}(Ax^\wedge A^TA)=\text{tr}(Ax^\wedge)=-x^T(A-A^T)
+        \end{equation}
+        因此将$\dot V_1$进一步化简得到
+        \begin{equation}
+            \dot V_1=\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ij}\omega_i^T(R_j^TR_i-R_i^TR_j)^\vee+\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ij}\omega_j^T(R_i^TR_j-R_j^TR_i)^\vee
+        \end{equation}
+        
+        由于拓扑图为无向图，$a_{ij}=a_{ji}$，故
+        \begin{equation}
+            \begin{aligned}
+                \dot V_1&=\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ij}\omega_i^T(R_j^TR_i-R_i^TR_j)^\vee+\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ji}\omega_j^T(R_i^TR_j-R_j^TR_i)^\vee\\
+                &=\sum_{i=1}^n\sum_{j=1}^n\frac{k_1}{2}a_{ij}\omega_i^T(R_j^TR_i-R_i^TR_j)^\vee+\sum_{j=1}^n\sum_{i=1}^n\frac{k_1}{2}a_{ji}\omega_j^T(R_i^TR_j-R_j^TR_i)^\vee\\
+                &=\sum_{i=1}^n\sum_{j=1}^nk_1a_{ij}\omega_i^T(R_j^TR_i-R_i^TR_j)^\vee
+                \end{aligned}
+        \end{equation}
+        
+        将$\dot V_1$与控制协议\ref{eq:protocol1}代入得到
+        \begin{equation}
+            \begin{aligned}
+                \dot V&=\sum_{i=1}^n\sum_{j=1}^nk_1a_{ij}\omega_i^T(R_j^TR_i-R_i^TR_j)^\vee+\sum_{i=1}^n\omega_i^T(-\omega_i\times J_i\omega_i+\tau_i)\\
+                &=\sum_{i=1}^n\sum_{j=1}^nk_1a_{ij}\omega_i^T(R_j^TR_i-R_i^TR_j)^\vee+\sum_{i=1}^n\omega_i^T(-k_1\sum_{j=1}^na_{ij}(R_j^TR_i-R_i^TR_j)^{\vee}\\
+                &-k_2\sum_{j=1}^na_{ij}(\omega_i-R_i^TR_j\omega_j)-k_3\omega_i)\\
+                &=-k_2\sum_{i=1}^n\sum_{j=1}^n\omega_i^T(\omega_i-R_i^TR_j\omega_j)-\sum_{i=1}^nk_3\omega_i^T\omega_i\\
+                &=k_2\sum_{i=1}^n\sum_{j=1}^n(R_i\omega_i)^T(R_i\omega_i-R_j\omega_j)-\sum_{i=1}^nk_3\omega_i^T\omega_i
+                \end{aligned}
+        \end{equation}
+        其中用到了$\omega_i^T(\omega^\wedge J_i\omega_i)=0$。令$R_i\omega_i=\Omega_i$，$\Omega=[\Omega_1^T,\Omega_2^T,...,\Omega_n^T]^T$
+        \begin{equation}
+            \dot V=-k_2\Omega^T(\mathcal{L}\otimes I_3)\Omega-\sum_{i=1}^nk_3\omega_i^T\omega_i\leq0
+        \end{equation}
+
+        令不变集为$\{R_j^TR_i-I_3,\omega_i|\dot V=0\}$。当$\dot V\equiv0$时，$\omega_i\equiv0$，
+        由动力学方程\ref{eq:dynamic3}可以得到$\tau_i\equiv0$，代入控制协议\ref{eq:protocol1}得
+        \begin{equation}
+            \label{eq:equillibrium}
+            \sum_{j=1}^na_{ij}(R_j^TR_i-R_i^TR_j)^\vee=0,\quad \forall i
+        \end{equation}
+
+        当通讯拓扑图$\mathcal{G}$是一棵无向树时，边集$\mathcal{E}$中的元素个数为$n-1$。
+        不妨令$i<j$，令$\hat q\in\mathbb{R}^{3(n-1)}$为所有向量$(R_j^TR_i-R_i^TR_j)^\vee$的组合，$(i,j)\in\mathcal{E}$。
+        注意到$(R_j^TR_i-R_i^TR_j)^\vee=-(R_i^TR_j-R_j^TR_i)^\vee$，\ref{eq:equillibrium}可以写成
+        \begin{equation}
+            (Q\otimes I_3)\hat q=0
+        \end{equation}
+        其中$Q\in\mathbb{R}^{n\times(n-1)}$，是通讯拓扑图$\mathcal{G}$的关联矩阵。
+        根据引理\ref{lm:incidence}，$\mathcal{G}$是一棵无向树，矩阵$Q$满秩。
+        因此$\hat q=0$，即对相邻的$i,j$，$(R_j^TR_i-R_i^TR_j)^\vee=0$，
+        根据引理\ref{lm:trace}和图$\mathcal{G}$的连通性，$R_i=R_j,\forall i\not=j$，姿态达成一致。
+
+        证毕。
+    \end{proof}
+\end{theorem}
+
+此处姿态一致性的达成有赖于图$\mathcal{G}$是一棵树这一特殊性质，仅依靠$\sum_{j=1}^na_{ij}(R_j^TR_i-R_i^TR_j)^\vee=0,\quad \forall i$这一结果无法得出一致性的结论。
+事实上，从仿真结果来看，图$\mathcal{G}$是否是树并不影响一致性，只要图是连通的，姿态一致性都能达成。
+关于这一问题，将在本章第六部分进行讨论分析。
+
+
+\section{无相对角速度测量}
+\section{仿真验证}
+\section{关于平衡点的讨论}
+\section{本章小结}
